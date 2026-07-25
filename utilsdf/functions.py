@@ -5,6 +5,7 @@ from pyromod.exceptions import ListenerTimeout
 from huepy import red
 from datetime import date
 from utilsdf.generator import Generator
+from utilsdf.db import Database
 from httpx import AsyncClient
 from time import time
 from pyromod import Client, Message
@@ -22,9 +23,17 @@ Languages = {
 
 times = {}
 users_info = {}
+
+# Get owner info from Database class
+_db = Database()
+OWNER_ID = _db.ID_OWNER
+OWNER_USERNAME = _db.OWNER_USERNAME
+
+# Build dynamic buy button with owner username
 buy_button = InlineKeyboardMarkup(
-    [[InlineKeyboardButton("Buy Now", url="https://t.me/Was_B3")]]
+    [[InlineKeyboardButton("💳 Buy Premium", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}")]]
 )
+
 db_bins = sqlite3.connect("assets/bins.db")
 cursor_bins = db_bins.cursor()
 
@@ -231,7 +240,7 @@ def bot_on() -> None:
 | $$  \ $$| $$  | $$   | $$         | $$  | $$| $$\  $$$
 | $$$$$$$/|  $$$$$$/   | $$         |  $$$$$$/| $$ \  $$
 |_______/  \______/    |__/          \______/ |__/  \__/
-                                                           
+                                                            
 """
         )
     )
@@ -464,8 +473,38 @@ def random_proxy_sh() -> dict:
 
 
 async def user_not_premium(m: Message) -> Message:
+    """
+    Send premium access message with owner contact button.
+    All features are FREE for the owner ID.
+    """
+    user_id = m.from_user.id
+    
+    # Check if user is owner - allow all features for free
+    if str(user_id) == OWNER_ID:
+        return None
+    
+    premium_message = f"""
+╔═══════════════════════════════════╗
+║ 𝑶𝒉! 𝒀𝒐𝒖 𝒂𝒓𝒆 𝒏𝒐𝒕 𝑷𝒓𝒆𝒎𝒊𝒖𝒎? ❌
+║ 𝑨𝒓𝒆 𝒚𝒐𝒖 𝒑𝒐𝒐𝒓? 𝑷𝒂𝒚! 💰
+╠═══════════════════════════════════╣
+║ 
+║ ✨ <b>Premium Features Include:</b>
+║ • Unlimited card checks
+║ • All payment gateways unlocked
+║ • Mass checking capabilities
+║ • Priority support
+║ • Custom rates & credits
+║
+║ 📌 <b>Special Offer:</b>
+║ Contact <b>{OWNER_USERNAME}</b>
+║ Get instant premium access!
+║
+╚═══════════════════════════════════╝
+"""
+    
     return await m.reply(
-        "𝑶𝒉! 𝒀𝒐𝒖 𝒂𝒓𝒆 𝒏𝒐𝒕 𝑷𝒓𝒆𝒎𝒊𝒖𝒎?\n𝑨𝒓𝒆 𝒚𝒐𝒖 𝒑𝒐𝒐𝒓? 𝑷𝒂𝒚!",
+        premium_message,
         quote=True,
         reply_markup=buy_button,
     )
